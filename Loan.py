@@ -27,6 +27,17 @@ class Loan(object):
         return payment
 
     @property
+    def minimum_payment_simulation(self):
+        # Return minimum payment or amount left in loan to pay, whichever comes first
+        if self.amount_still_owed is None:
+            payment = 0.
+        elif self.amount_still_owed < self.minimum_payment:
+            payment = self.amount_still_owed
+        else:
+            payment = self.minimum_payment
+        return payment
+
+    @property
     def monthly_interest_rate(self):
         return self.yearly_interest_rate/12.
 
@@ -58,6 +69,17 @@ class Loan(object):
         Computes the interest earned in a single cycle given the current simulation amount still owed.
         """
         return self.principal_amount*(self.monthly_interest_amp - 1)
+
+    def compute_single_cycle_earned_interest_simulation(self):
+        """
+        Computes the interest earned in a single cycle given the current simulation amount still owed.
+        """
+        if self.amount_still_owed is None:
+            earned_interest = 0.
+        else:
+            earned_interest = self.amount_still_owed*(self.monthly_interest_amp - 1)
+        return earned_interest
+
 
 
 def main():

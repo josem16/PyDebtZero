@@ -47,7 +47,7 @@ class Wallet(object):
 
             # Compute and record interest earned in current pay cycle, then update amount owed on each loan with earned interest
             for loan_id,loan in self.loans.iteritems():
-                earned_interest = loan.compute_single_cycle_earned_interest()
+                earned_interest = loan.compute_single_cycle_earned_interest_simulation()
                 self.interest_history[loan_id].append(earned_interest)
                 loan.amount_still_owed += earned_interest
 
@@ -68,16 +68,18 @@ class Wallet(object):
 
         # Get minimum payments required on all loans
         for loan_id,loan in self.loans.iteritems():
-            payments[loan_id] = loan.minimum_payment
+            payments[loan_id] = loan.minimum_payment_simulation
 
         # Amount left after making minimum payments
-        amount_left = self.budget_ceiling - np.sum(payments.items())
+        amount_left = self.budget_ceiling - np.sum(payments.values())
 
         # Up until remaining amount is used up, pay loans starting from one with the lowest amount due
         loan_priority_ids = self.get_debt_snowball_loan_priority_ids()
         for loan_id in loan_priority_ids:
-            loan_amount_still_owed = self.loans[loan_id].amount_still_owed
-            if amount_left <= loan_amount_still_owed:
+            loan_amount_still_owed = self.loans[loan_id].amount_still_owed - payments[loan_id]
+            if loan_amount_still_owed == 0.:
+                continue
+            elif amount_left <= loan_amount_still_owed:
                 payments[loan_id] += amount_left
                 break
             else:
@@ -91,7 +93,8 @@ class Wallet(object):
         """
         Returns the list of loan IDs in order of lowest to greatest amount due.
         """
-        loan_priority_tuples = sorted(self.loans.items(), key=operator.itemgetter(1))
+        loan_priority_dict = {loan_id:loan.amount_still_owed for (loan_id,loan) in self.loans.iteritems()}
+        loan_priority_tuples = sorted(loan_priority_dict.items(), key=operator.itemgetter(1))
         loan_priority_ids = [loan_priority_tuple[0] for loan_priority_tuple in loan_priority_tuples]
         return loan_priority_ids
 
@@ -197,24 +200,17 @@ class Wallet(object):
         Initialize start of payment plan by setting amount due to principal loan amounts and resetting payment/balance history.
         """
         # Initialize amounts still owed
-        for loan in self.loans.values():
-            loan.amount_still_owed = 1.*loan.principal_amount
-
-        # Initialize payment history
-        self.payment_history = {}
-        for loan_id in self.loans.keys():
-            self.payment_history[loan_id] = []
-
-        # Initialize balance history
-        self.balance_history = {}
-        for loan_id in self.loans.keys():
-            self.balance_history[loan_id] = []
-
-        # Initialize balance history
+        # Initialize payment/balance/interest history
+        self.payment_history  = {}
+        self.balance_history  = {}
         self.interest_history = {}
-        for loan_id in self.loans.keys():
+        self.method_used_name = None
+        self.months_in_history = None
+        for loan_id,loan in self.loans.iteritems():
+            loan.amount_still_owed = 1.*loan.principal_amount
+            self.payment_history[loan_id] = []
+            self.balance_history[loan_id] = []
             self.interest_history[loan_id] = []
-
 
 def main():
     print('No default behavior.')
