@@ -2,13 +2,15 @@ import numpy as np
 
 class Loan(object):
     """
+    The Loan class object stores information regarding a source of debt.
     """
 
-    def __init__(self, name, principal_amount, apr, min_payment=None, months_to_pay=120):
+    def __init__(self, name, principal_amount, apr, min_payment=None,
+                 months_to_pay=120):
         # Loan properties
         self.name = name
         self.principal_amount = principal_amount
-        self.yearly_interest_rate = apr/100.
+        self.apr = apr
         self.months_to_desired_completion = months_to_pay
 
         # Simulation parameters
@@ -18,8 +20,15 @@ class Loan(object):
         self.minimum_payment_default = min_payment
 
     @property
+    def yearly_interest_rate(self):
+        # Return yearly interest rate (APR as a decimal)
+        yearly_interest_rate = self.apr/100.
+        return yearly_interest_rate
+
+    @property
     def minimum_payment(self):
-        # Use default payment if one is specified, otherwise compute a minimum
+        # Use default payment if one is specified, otherwise compute a
+        # minimum
         if self.minimum_payment_default is not None:
             payment = self.minimum_payment_default
         else:
@@ -28,7 +37,8 @@ class Loan(object):
 
     @property
     def minimum_payment_simulation(self):
-        # Return minimum payment or amount left in loan to pay, whichever comes first
+        # Return minimum payment or amount left in loan to pay,
+        # whichever comes first
         if self.amount_still_owed is None:
             payment = 0.
         elif self.amount_still_owed < self.minimum_payment:
@@ -43,15 +53,17 @@ class Loan(object):
 
     @property
     def monthly_interest_amp(self):
-        # Returns the monthly amplification factor to be applied to the principal amount to account for compounding interest.
+        # Returns the monthly amplification factor to be applied to the
+        # principal amount to account for compounding interest.
         return 1+self.monthly_interest_rate
 
 
     def compute_minimum_required_payment(self):
         """
-        Determines the minimum payment required to pay off the loan by the desired time in months.
+        Determines the minimum payment required to pay off the loan by
+        the desired time in months.
         """
-        # Compute based on ineterest rate
+        # Compute based on interest rate
         if self.monthly_interest_rate == 0:
             minimum_payment = self.principal_amount/self.months_to_desired_completion
         else:
@@ -66,13 +78,15 @@ class Loan(object):
 
     def compute_single_cycle_earned_interest(self):
         """
-        Computes the interest earned in a single cycle given the current simulation amount still owed.
+        Computes the interest earned in a single cycle given the current
+        simulation amount still owed.
         """
         return self.principal_amount*(self.monthly_interest_amp - 1)
 
     def compute_single_cycle_earned_interest_simulation(self):
         """
-        Computes the interest earned in a single cycle given the current simulation amount still owed.
+        Computes the interest earned in a single cycle given the current
+        simulation amount still owed.
         """
         if self.amount_still_owed is None:
             earned_interest = 0.
